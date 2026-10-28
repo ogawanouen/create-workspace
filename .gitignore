@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tgz
+.DS_Store
+
+# 環境変数や秘密情報を含むファイル
+.env
+.env.*
+!.env.example

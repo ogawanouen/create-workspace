@@ -1,0 +1,3 @@
+# Orcaが新しいworktreeを作るときにコピーする、Git管理外の環境設定ファイル
+.env
+.env.local

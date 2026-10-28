@@ -1,14 +1,28 @@
 {
-  "name": "create-workspace",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@ogawanouen/create-workspace",
+  "version": "0.0.1",
+  "description": "monorepoとworkspaceを作成するCLI",
+  "bin": {
+    "create-workspace": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "prepack": "pnpm build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "^24.11.0"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
@@ -17,5 +31,11 @@
     }
   },
   "packageManager": "pnpm@12.15.0",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@biomejs/biome": "2.6.3",
+    "@types/node": "^24.19.2",
+    "tsdown": "0.23.2",
+    "typescript": "7.0.2"
+  }
 }
