@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { spawn } from "node:child_process";
 import { access } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { stdin, stdout } from "node:process";
@@ -10,7 +11,7 @@ import packageJson from "../package.json" with { type: "json" };
 const help = `Usage: create-workspace [options]
 
 Create monorepos and workspaces.
-Choose a template and print the command to create a workspace.
+Choose a template, confirm the command, and create a workspace.
 
 When prompted, press Enter or enter 1 for the default template, or enter 2 for
 the Cloudflare template.
@@ -37,31 +38,47 @@ async function findTurboConfig(startDirectory: string): Promise<boolean> {
 
 async function selectTemplate(): Promise<void> {
   const readline = createInterface({ input: stdin, output: stdout });
-  const lines = readline[Symbol.asyncIterator]();
   try {
     while (true) {
-      stdout.write(
-        "テンプレートを選択してください (1: デフォルト, 2: Cloudflare) [1]: ",
-      );
-      const { value, done } = await lines.next();
-      if (done) throw new Error("入力を受け取れませんでした。");
-
-      const answer = value.trim();
+      const answer = (
+        await readline.question(
+          "テンプレートを選択してください (1: デフォルト, 2: Cloudflare) [1]: ",
+        )
+      ).trim();
       if (answer === "" || answer === "1") {
-        console.log("pnpm dlx create-turbo@latest");
+        await confirmAndRun(["dlx", "create-turbo@latest"], readline);
         return;
       }
       if (answer === "2") {
-        stdout.write("プロジェクト名を入力してください: ");
-        const { value: projectName, done: nameDone } = await lines.next();
-        if (nameDone) throw new Error("プロジェクト名を受け取れませんでした。");
-        const name = projectName.trim();
+        const name = (
+          await readline.question("プロジェクト名を入力してください: ")
+        ).trim();
         if (name === "") {
           console.log("プロジェクト名を入力してください。");
           continue;
         }
-        console.log(
-          `pnpm dlx create-turbo@latest ${name} --example https://github.com/ogawanouen/create-workspace/tree/main/template`,
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name)) {
+          console.log(
+            "プロジェクト名には英数字、ドット、ハイフン、アンダースコアを使用してください。",
+          );
+          continue;
+        }
+        const templateUrl =
+          process.env.CREATE_WORKSPACE_TEMPLATE_URL ??
+          "https://github.com/ogawanouen/create-workspace/tree/main";
+        await confirmAndRun(
+          [
+            "dlx",
+            "create-turbo@latest",
+            name,
+            "--example",
+            templateUrl,
+            "--example-path",
+            "template",
+            "--package-manager",
+            "pnpm",
+          ],
+          readline,
         );
         return;
       }
@@ -69,7 +86,48 @@ async function selectTemplate(): Promise<void> {
     }
   } finally {
     readline.close();
+    stdin.pause();
+    stdin.unref();
+    stdin.destroy();
   }
+}
+
+function shellQuote(argument: string): string {
+  return `'${argument.replaceAll("'", "'\\''")}'`;
+}
+
+async function confirmAndRun(
+  arguments_: string[],
+  readline: ReturnType<typeof createInterface>,
+): Promise<void> {
+  const command = `pnpm ${arguments_.map(shellQuote).join(" ")}`;
+  console.log(`実行するコマンド: ${command}`);
+  const answer = await readline.question(
+    "このコマンドを実行してよろしいですか？ (y/N): ",
+  );
+
+  if (!/^(y|yes)$/i.test(answer.trim())) {
+    console.log("実行をキャンセルしました。");
+    return;
+  }
+
+  await new Promise<void>((resolvePromise, rejectPromise) => {
+    const child = spawn("pnpm", arguments_, { stdio: "inherit" });
+    child.once("error", rejectPromise);
+    child.once("close", (code, signal) => {
+      if (code === 0) {
+        resolvePromise();
+      } else {
+        rejectPromise(
+          new Error(
+            signal
+              ? `コマンドがシグナル ${signal} で終了しました。`
+              : `コマンドが終了コード ${code ?? "不明"} で終了しました。`,
+          ),
+        );
+      }
+    });
+  });
 }
 
 try {

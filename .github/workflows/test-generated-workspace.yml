@@ -1,0 +1,84 @@
+name: Test generated Cloudflare workspace
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: Name for the generated test workspace
+        required: true
+        default: cloudflare-smoke-test
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test-generated-workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.15.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install CLI dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm build
+
+      - name: Prepare generated workspace directory
+        env:
+          PROJECT_NAME: ${{ inputs.project_name }}
+        run: |
+          if [[ ! "$PROJECT_NAME" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+            echo "Project name may contain only letters, numbers, dots, underscores, and hyphens." >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/generated-workspace"
+          echo "GENERATED_DIR=$RUNNER_TEMP/generated-workspace/$PROJECT_NAME" >> "$GITHUB_ENV"
+
+      - name: Install Expect
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes expect
+
+      - name: Generate workspace through the CLI
+        env:
+          PROJECT_NAME: ${{ inputs.project_name }}
+          CREATE_WORKSPACE_TEMPLATE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}
+        run: |
+          cd "$RUNNER_TEMP/generated-workspace"
+          expect <<'EOF'
+          set timeout -1
+          spawn node $env(GITHUB_WORKSPACE)/dist/cli.mjs
+          expect "テンプレートを選択してください"
+          send "2\r"
+          expect "プロジェクト名を入力してください"
+          send "$env(PROJECT_NAME)\r"
+          expect "このコマンドを実行してよろしいですか？"
+          send "y\r"
+          expect eof
+          set result [wait]
+          exit [lindex $result 3]
+          EOF
+
+      - name: Install generated workspace dependencies
+        run: pnpm --dir "$GENERATED_DIR" install --frozen-lockfile
+
+      - name: Check generated workspace formatting and lint
+        run: pnpm --dir "$GENERATED_DIR" check
+
+      - name: Typecheck generated workspace
+        run: pnpm --dir "$GENERATED_DIR" typecheck
+
+      - name: Build generated workspace
+        run: pnpm --dir "$GENERATED_DIR" build

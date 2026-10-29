@@ -1,6 +1,6 @@
 # create-workspace
 
-monorepoとworkspaceを作成するCLIです。現在は単一パッケージの開発基盤とCLIの骨組みを提供し、ヘルプとバージョンの表示に対応しています。Turborepo monorepoや内部パッケージの生成機能は今後実装します。
+monorepoとworkspaceを作成するCLIです。Turborepoの標準テンプレート、またはCloudflare Workers向けテンプレートを選び、確認後に生成コマンドを実行します。
 
 ## 開発環境
 
@@ -25,6 +25,8 @@ node dist/cli.mjs --version
 ```
 
 引数なし・`--help`・`-h`はヘルプを、`--version`・`-v`は`package.json`のバージョンを表示し、終了コード0を返します。ヘルプとバージョンを同時に指定した場合はヘルプを優先します。未対応のオプションや位置引数は標準エラー出力にエラーを表示し、終了コード1を返します。
+
+テンプレートを選ぶと、CLIは実行する`pnpm dlx create-turbo`コマンドを表示し、確認を求めます。`y`または`yes`で実行し、それ以外の入力ではキャンセルします。Cloudflareテンプレートを選んだ場合はプロジェクト名を指定します。
 
 ## 開発コマンド
 
@@ -81,5 +83,7 @@ git push origin v0.0.2
 ```
 
 タグpushでGitHub Actionsが依存関係を導入し、Biomeチェック、型チェック、ビルドを実行します。すべて成功し、タグのバージョンが`package.json`と一致した場合に、`GITHUB_TOKEN`でGitHub Packagesへ公開します。
+
+GitHub Actionsの「Test generated Cloudflare workspace」は手動実行できます。CLIからCloudflareテンプレートを生成し、生成物の依存関係、Biomeチェック、型チェック、ビルドを確認します。
 
 初回公開の準備からPC上でのCLI実行までの詳しい手順は[リリース手順](docs/release.md)を参照してください。
