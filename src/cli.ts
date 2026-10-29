@@ -52,8 +52,16 @@ async function selectTemplate(): Promise<void> {
         return;
       }
       if (answer === "2") {
+        stdout.write("プロジェクト名を入力してください: ");
+        const { value: projectName, done: nameDone } = await lines.next();
+        if (nameDone) throw new Error("プロジェクト名を受け取れませんでした。");
+        const name = projectName.trim();
+        if (name === "") {
+          console.log("プロジェクト名を入力してください。");
+          continue;
+        }
         console.log(
-          "pnpm dlx create-turbo@latest --example https://github.com/bimsina/vite-react-cf-starter",
+          `pnpm dlx create-turbo@latest ${name} --example https://github.com/ogawanouen/create-workspace/tree/main/template`,
         );
         return;
       }

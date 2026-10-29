@@ -1,0 +1,16 @@
+{
+  "name": "cloudflare-turborepo-template",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "check": "biome check ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.3",
+    "turbo": "^2.5.0"
+  },
+  "packageManager": "pnpm@12.15.0"
+}

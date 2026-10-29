@@ -11,34 +11,33 @@ Node.jsの対応範囲は`^24.11.0`（24.11.0以上、25.0.0未満）です。�
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm check
-pnpm typecheck
-pnpm build
+pnpm prepack
 ```
+
+依存関係のインストール時にLefthookがGit hookを設定します。コミット前にはステージ済みのJavaScript／TypeScript、JSON、CSS、GraphQL、HTML、MarkdownファイルにBiomeのチェックと自動修正を実行し、修正内容もステージします。自動修正後に診断が残る場合、コミットは中止されます。
 
 ## CLIの使い方
 
 ```sh
 node dist/cli.mjs
 node dist/cli.mjs --help
-node dist/cli.mjs -h
 node dist/cli.mjs --version
-node dist/cli.mjs -v
 ```
 
 引数なし・`--help`・`-h`はヘルプを、`--version`・`-v`は`package.json`のバージョンを表示し、終了コード0を返します。ヘルプとバージョンを同時に指定した場合はヘルプを優先します。未対応のオプションや位置引数は標準エラー出力にエラーを表示し、終了コード1を返します。
 
 ## 開発コマンド
 
-| コマンド         | 内容                                                                |
-| ---------------- | ------------------------------------------------------------------- |
-| `pnpm build`     | tsdownで`src/cli.ts`から`dist/cli.mjs`とソースマップを生成          |
-| `pnpm dev`       | ファイルの変更を監視して再ビルド                                    |
-| `pnpm typecheck` | CLIソースとビルド設定をstrictモードで型チェック（ファイル出力なし） |
-| `pnpm check`     | Biomeで整形・推奨lint・import順序を確認                             |
-| `pnpm check:fix` | Biomeで整形・安全なlint修正・import整理を適用                       |
-| `pnpm format`    | Biomeで整形を適用                                                   |
-| `pnpm pack`      | `prepack`でビルドして配布用のtarballを作成                          |
+| コマンド         | 内容                                                                     |
+| ---------------- | ------------------------------------------------------------------------ |
+| `pnpm build`     | tsdownで`src/cli.ts`から`dist/cli.mjs`とソースマップを生成               |
+| `pnpm dev`       | ファイルの変更を監視して再ビルド                                         |
+| `pnpm typecheck` | CLIソースとビルド設定をstrictモードで型チェック（ファイル出力なし）      |
+| `pnpm check`     | Biomeで整形・推奨lint・import順序を確認                                  |
+| `pnpm fix`       | Biomeで整形・安全なlint修正・import整理を適用                            |
+| `pnpm format`    | Biomeで整形を適用                                                        |
+| `pnpm prepack`   | `fix`、`typecheck`、`build`を実行。`pnpm pack`や`pnpm publish`時にも実行 |
+| `pnpm pack`      | `prepack`を実行してから配布用のtarballを作成                             |
 
 ビルド形式はNode.js向けES Modulesで、型宣言は出力しません。Biomeは[公式推奨](https://biomejs.dev/installation/quick-start/)に従って完全固定バージョンで導入し、2スペース・ダブルクォート・セミコロンありで統一しています。`.gitignore`の除外対象はBiomeの検査からも除外されます。
 
