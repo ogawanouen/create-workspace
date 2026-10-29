@@ -101,6 +101,73 @@ for (const [destination, template, selector] of [
   });
 }
 
+test("generates Void with fate and Astryx and integrates it", async (t) => {
+  const root = await fixture(t);
+  const result = await interact(
+    root,
+    projectAnswers("apps", "4", "void-app", "@example/void-app"),
+    { env: await mockPnpm(root) },
+  );
+  assert.equal(result.code, 0, result.output);
+  const commands = await calls(root);
+  assert.deepEqual(
+    commands.map((call) => call.args),
+    [
+      [
+        "dlx",
+        "create-fate@latest",
+        "apps/void-app",
+        "--template",
+        "void",
+        "--framework",
+        "react",
+        "--no-setup",
+      ],
+      ["install"],
+    ],
+  );
+  const target = join(root, "apps/void-app");
+  const manifest = JSON.parse(
+    await readFile(join(target, "package.json"), "utf8"),
+  );
+  assert.equal(manifest.name, "@example/void-app");
+  assert.equal(
+    manifest.devDependencies.vite,
+    "npm:@voidzero-dev/vite-plus-core@1.4.0",
+  );
+  assert.equal(manifest.dependencies["@astryxdesign/core"], "0.7.4");
+  assert.match(
+    await readFile(join(target, "pages/layout.tsx"), "utf8"),
+    /neutralTheme/,
+  );
+  assert.match(
+    await readFile(join(target, "src/App.css"), "utf8"),
+    /astryx.css/,
+  );
+  await assert.rejects(access(join(target, "pnpm-workspace.yaml")));
+});
+
+test("Void generation can be cancelled or fail without installation", async (t) => {
+  for (const mode of ["cancel", "fail"]) {
+    const root = await fixture(t);
+    const env = await mockPnpm(root);
+    if (mode === "fail") env.MOCK_FAIL = "generate";
+    const result = await interact(
+      root,
+      projectAnswers(
+        "apps",
+        "4",
+        "app",
+        "app",
+        mode === "cancel" ? "no" : "yes",
+      ),
+      { env },
+    );
+    assert.equal(result.code, mode === "cancel" ? 0 : 1, result.output);
+    assert.equal((await calls(root)).length, mode === "cancel" ? 0 : 1);
+  }
+});
+
 test("falls back to turbo.json and creates the pnpm workspace file", async (t) => {
   const root = await fixture(t, null);
   await write(join(root, "turbo.json"), "{}");
@@ -274,7 +341,7 @@ test("navigates menus and confirmation with arrow keys", async (t) => {
   const root = await fixture(t);
   const answers = projectAnswers("apps", "3", "api", "api");
   answers[0][1] = keys.down + keys.up;
-  answers[1][1] = keys.up; // Wrap from React Router to Hono.
+  answers[1][1] = keys.up.repeat(2); // Wrap from React Router to Hono.
   answers[4][1] = keys.right; // Change the initial Cancel selection to Run.
   const result = await interact(root, answers, { env: await mockPnpm(root) });
   assert.equal(result.code, 0, result.output);

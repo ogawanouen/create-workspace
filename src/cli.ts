@@ -16,6 +16,7 @@ import {
 import packageJson from "../package.json" with { type: "json" };
 import {
   type AppTemplate,
+  configureFateAstryx,
   type Destination,
   directoryError,
   findWorkspaceRoot,
@@ -30,7 +31,7 @@ const help = `Usage: create-workspace [options]
 Create monorepos, or add apps and packages to an existing pnpm/Turborepo workspace.
 
 Inside a workspace (including subdirectories): choose apps or packages, then
-React Router, simple Workers, or Hono for apps. Enter a directory name and a
+React Router, simple Workers, Hono, or Void + fate + Astryx for apps. Enter a directory name and a
 package name (including @scope/name), confirm generation and root pnpm install.
 Use the arrow keys to select an option and Enter to confirm.
 Outside a workspace: choose the default template or Cloudflare.
@@ -121,6 +122,7 @@ async function addWorkspaceProject(root: string): Promise<void> {
               { value: "react-router", label: "React Router" },
               { value: "hello-world", label: "シンプルなWorkers" },
               { value: "hono", label: "Hono" },
+              { value: "void-fate-astryx", label: "Void + fate + Astryx" },
             ],
           }),
         )
@@ -168,8 +170,18 @@ async function addWorkspaceProject(root: string): Promise<void> {
       },
     );
     if (!created) return;
+    if (template === "void-fate-astryx") {
+      stage = "Astryxの設定";
+      await configureFateAstryx(target);
+    }
     stage = "workspaceへの統合";
-    await integrateWorkspace(root, target, packageName, destination === "apps");
+    await integrateWorkspace(
+      root,
+      target,
+      packageName,
+      destination === "apps",
+      template === "void-fate-astryx",
+    );
     stage = "ルートでの pnpm install";
     await runPnpm(["install"], root);
     console.log(`追加が完了しました: ${target} (${packageName})`);

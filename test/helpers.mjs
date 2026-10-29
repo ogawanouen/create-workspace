@@ -160,6 +160,15 @@ if (!install) {
   const target = resolve(args[2] ?? "default-workspace");
   await mkdir(target, { recursive: true });
   await writeFile(resolve(target, "package.json"), JSON.stringify({name: "generated", scripts: {build: "generated build"}, custom: {preserved: true}}));
+  if (args[1].startsWith("create-fate")) {
+    await writeFile(resolve(target, "package.json"), JSON.stringify({name: "generated", dependencies: {}, devDependencies: {vite: "catalog:"}, scripts: {build: "generated build"}, custom: {preserved: true}}));
+    await writeFile(resolve(target, "pnpm-workspace.yaml"), "catalog:\\n  vite: npm:@voidzero-dev/vite-plus-core@1.4.0\\n");
+    await mkdir(resolve(target, "pages"));
+    await mkdir(resolve(target, "src"));
+    await writeFile(resolve(target, "pages/layout.tsx"), "import Stack from '@nkzw/stack';\\n<LocaleContext></LocaleContext>");
+    await writeFile(resolve(target, "pages/index.tsx"), "import Stack, { VStack } from '@nkzw/stack';\\n<Section gap={32}>");
+    await writeFile(resolve(target, "src/App.css"), "@import 'tailwindcss';");
+  }
   if (args[1].startsWith("create-cloudflare")) {
     for (const path of ["pnpm-workspace.yaml", "pnpm-lock.yaml", "package-lock.json", "yarn.lock"]) await writeFile(resolve(target, path), "generated");
     await mkdir(resolve(target, "node_modules"));

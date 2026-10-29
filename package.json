@@ -1,6 +1,6 @@
 {
   "name": "@ogawanouen/create-workspace",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "monorepoとworkspaceを作成するCLI",
   "repository": {
     "type": "git",

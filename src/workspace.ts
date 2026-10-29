@@ -12,7 +12,11 @@ import validatePackageName from "validate-npm-package-name";
 import { isMap, isScalar, isSeq, parseDocument } from "yaml";
 
 export type Destination = "apps" | "packages";
-export type AppTemplate = "react-router" | "hello-world" | "hono";
+export type AppTemplate =
+  | "react-router"
+  | "hello-world"
+  | "hono"
+  | "void-fate-astryx";
 
 function isMissing(error: unknown): boolean {
   return (error as NodeJS.ErrnoException).code === "ENOENT";
@@ -172,6 +176,18 @@ export function generatorArguments(
   if (destination === "packages") {
     return ["dlx", "create-tsdown@latest", target, "--template", "minimal"];
   }
+  if (template === "void-fate-astryx") {
+    return [
+      "dlx",
+      "create-fate@latest",
+      target,
+      "--template",
+      "void",
+      "--framework",
+      "react",
+      "--no-setup",
+    ];
+  }
   return [
     "dlx",
     "create-cloudflare@latest",
@@ -194,6 +210,7 @@ export async function integrateWorkspace(
   target: string,
   packageName: string,
   cloudflare: boolean,
+  astryx = false,
 ): Promise<void> {
   const manifest = resolve(target, "package.json");
   const packageJson = JSON.parse(await readFile(manifest, "utf8"));
@@ -207,7 +224,11 @@ export async function integrateWorkspace(
     if (!patterns.includes(pattern)) document.addIn(["packages"], pattern);
   }
   if (cloudflare && document.get("dangerouslyAllowAllBuilds") !== true) {
-    for (const name of ["esbuild", "workerd"]) {
+    for (const name of [
+      "esbuild",
+      "workerd",
+      ...(astryx ? ["@astryxdesign/core"] : []),
+    ]) {
       // Keep explicit denials and version-specific decisions in the root policy.
       const builds = document.get("allowBuilds");
       const permissions = document.get("permissions");
@@ -269,4 +290,81 @@ export async function integrateWorkspace(
       await rm(resolve(target, path), { recursive: true, force: true });
     }
   }
+}
+
+// Resolve the template's private catalog before removing its nested workspace.
+export async function configureFateAstryx(target: string): Promise<void> {
+  const manifest = resolve(target, "package.json");
+  const packageJson = JSON.parse(await readFile(manifest, "utf8"));
+  const workspace = await readWorkspace(target);
+  const catalog = workspace.get("catalog");
+  for (const section of [
+    "dependencies",
+    "devDependencies",
+    "optionalDependencies",
+  ]) {
+    for (const [name, version] of Object.entries(packageJson[section] ?? {})) {
+      if (version === "catalog:") {
+        const resolved = isMap(catalog) ? catalog.get(name) : undefined;
+        if (typeof resolved !== "string")
+          throw new Error(`テンプレートのcatalogに${name}がありません。`);
+        packageJson[section][name] = resolved;
+      }
+    }
+  }
+  Object.assign(packageJson.dependencies, {
+    "@astryxdesign/core": "0.7.4",
+    "@astryxdesign/theme-neutral": "0.7.4",
+    "@stylexjs/stylex": "^0.19.1",
+  });
+  await writeFile(manifest, `${JSON.stringify(packageJson, null, 2)}\n`);
+
+  async function replace(path: string, before: string, after: string) {
+    const file = resolve(target, path);
+    const contents = await readFile(file, "utf8");
+    if (!contents.includes(before))
+      throw new Error(`テンプレートの構造が変更されています: ${path}`);
+    await writeFile(file, contents.replace(before, after));
+  }
+  await replace(
+    "src/App.css",
+    "@import 'tailwindcss';",
+    `@layer reset, theme, base, astryx-base, astryx-theme, components, utilities;
+@import '@astryxdesign/theme-neutral/fonts.css';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import '@astryxdesign/core/reset.css';
+@import '@astryxdesign/core/astryx.css';
+@import '@astryxdesign/theme-neutral/theme.css';
+@import 'tailwindcss/utilities.css' layer(utilities);`,
+  );
+  await replace(
+    "pages/layout.tsx",
+    "import Stack from '@nkzw/stack';",
+    `import { Theme } from '@astryxdesign/core/theme';
+import { neutralTheme } from '@astryxdesign/theme-neutral/built';
+import Stack from '@nkzw/stack';`,
+  );
+  await replace(
+    "pages/layout.tsx",
+    "<LocaleContext>",
+    "<Theme theme={neutralTheme}>\n    <LocaleContext>",
+  );
+  await replace(
+    "pages/layout.tsx",
+    "</LocaleContext>",
+    "</LocaleContext>\n    </Theme>",
+  );
+  await replace(
+    "pages/index.tsx",
+    "import Stack, { VStack } from '@nkzw/stack';",
+    `import { Button as AstryxButton } from '@astryxdesign/core/Button';
+import Stack, { VStack } from '@nkzw/stack';`,
+  );
+  await replace(
+    "pages/index.tsx",
+    "<Section gap={32}>",
+    `<Section gap={32}>
+      <div><AstryxButton onClick={() => window.open('https://astryx.atmeta.com', '_blank', 'noopener,noreferrer')}>Explore Astryx</AstryxButton></div>`,
+  );
 }
