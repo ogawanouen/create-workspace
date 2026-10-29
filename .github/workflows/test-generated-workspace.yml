@@ -54,8 +54,11 @@ jobs:
       - name: Generate workspace through the CLI
         env:
           PROJECT_NAME: ${{ inputs.project_name }}
+          GITHUB_TOKEN: ${{ github.token }}
           CREATE_WORKSPACE_TEMPLATE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}/template
         run: |
+          git config --global http.https://github.com/.extraheader \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
           cd "$RUNNER_TEMP/generated-workspace"
           expect <<'EOF'
           set timeout -1
