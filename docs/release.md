@@ -1,0 +1,112 @@
+# リリース手順
+
+- このプロジェクトは、Gitタグを起点にGitHub ActionsでパッケージをGitHub Packagesへ公開します。
+- 公開されたパッケージは`pnpm dlx @ogawanouen/create-workspace`から実行できます。
+
+この手順では、`package.json`の`version`を正とし、`v<version>`形式のタグを付けます。  
+たとえばバージョンが`1.0.0`なら、タグ名は`v1.0.0`です。
+
+## 1. 開発環境を合わせる
+
+Homebrewで管理しているfnmを使い、リポジトリのNode.jsバージョンを選びます。
+
+```sh
+cd ~/Documents/cloudflare/create-workspace
+fnm use
+node --version
+pnpm --version
+```
+
+`.node-version`はNode.js 24系を指定しています。`package.json`はNode.js `^24.11.0`とpnpm `12.15.0`を指定しているため、Node.jsは24.11.0以上、pnpmは12.15.0を使ってください。
+
+```sh
+fnm install 24
+fnm use
+```
+
+## 2. バージョンを更新してmainへ反映する
+
+`package.json`の`version`を新しい値に更新します。公開済みのバージョンは再利用しません。
+
+更新内容を確認し、プロジェクトのチェックを実行します。
+
+```sh
+pnpm install --frozen-lockfile
+pnpm check
+pnpm typecheck
+pnpm build
+git status --short
+```
+
+すべて成功したら、バージョン変更を含む変更をコミットし、`main`へpushまたはマージします。タグはその時点のコミットを指すため、タグを作る前に公開したいコードと`.github/workflows/publish.yml`がGitHub上の`main`にあることを確認してください。
+
+```sh
+git switch main
+git pull --ff-only origin main
+git status --short --branch
+```
+
+未コミットの変更がなく、必要なリリース変更が`main`に含まれている状態にします。
+
+## 3. バージョンタグを作成してpushする
+
+`package.json`からバージョンを読み取り、注釈付きタグを作成します。以下は現在のバージョンを自動で使うため、コマンド内にバージョンを重複して書く必要はありません。
+
+```sh
+VERSION="$(node -p "require('./package.json').version")"
+TAG="v${VERSION}"
+git tag -a "$TAG" -m "Release $TAG"
+git show "$TAG" --no-patch
+```
+
+表示されたタグ名とコミットを確認してから、タグをGitHubへpushします。
+
+```sh
+git push origin "$TAG"
+```
+
+このpushが公開workflowの起動操作です。GitHub Releaseを作成する必要はありません。
+
+## 4. GitHub Actionsの公開結果を確認する
+
+GitHubの`ogawanouen/create-workspace`リポジトリで**Actions**を開き、`Publish to GitHub Packages`の実行を確認します。workflowは次の順に処理します。
+
+1. Node.js 24系とpnpm 12.15.0を設定する
+2. lockfileに従って依存関係をインストールする
+3. Biomeチェック、型チェック、ビルドを行う
+4. タグから`v`を除いた値と`package.json`のバージョンを照合する
+5. 成功した場合にGitHub Packagesへ公開する
+
+公開にはworkflowの`GITHUB_TOKEN`を使い、`packages: write`権限を付与しています。公開が成功したら、リポジトリまたはOrganizationの**Packages**で`@ogawanouen/create-workspace`とバージョンを確認します。初回公開後は、パッケージが意図した非公開設定であることと、利用者に読み取り権限があることも確認してください。
+
+## 5. PCでGitHub Packagesにログインする
+
+利用するGitHubアカウントに、対象パッケージの読み取り権限が必要です。GitHubのPersonal Access Token (classic)を作成し、`read:packages`権限を付けます。OrganizationでSSOが必須の場合は、トークンもSSO認証してください。
+
+プロジェクトの`.npmrc`はスコープのレジストリを指定するだけで、認証トークンは含みません。次のコマンドでpnpmのユーザー設定にログイン情報を保存します。
+
+```sh
+pnpm login --registry=https://npm.pkg.github.com --scope=@ogawanouen
+```
+
+プロンプトにはGitHubユーザー名とPersonal Access Token (classic)を入力します。トークンはパスワードとして入力してください。トークンをリポジトリのファイルへ書いたり、コミットしたりしないでください。
+
+## 6. 公開したCLIを実行する
+
+ヘルプと公開バージョンを確認します。
+
+```sh
+pnpm dlx @ogawanouen/create-workspace --help
+pnpm dlx @ogawanouen/create-workspace --version
+```
+
+`--version`に今回公開したバージョンが表示されれば、GitHub Packagesから取得したCLIを実行できています。
+
+## 失敗したとき
+
+- **チェックまたはビルドで失敗した**: 一時的な実行障害ならActionsから同じ実行を再実行します。コード修正が必要なら修正を`main`へ反映し、パッチバージョンを上げて新しいタグを作成します。タグのworkflowはタグが指すコミットをチェックアウトするため、`main`だけを修正して同じタグを再実行しても修正は入りません。
+- **タグと`package.json`のバージョンが一致しない**: workflowは公開しません。修正コミットを`main`へ反映し、正しいバージョン番号の新しいタグを使ってください。
+- **publishで失敗した**: GitHubのPackagesに対象バージョンが既に作成されていないか先に確認してください。公開済みの同じバージョンは再公開せず、次のリリースでバージョンを上げます。
+- **PCで認証または取得に失敗した**: PAT classicの`read:packages`権限、アカウントのパッケージ読み取り権限、OrganizationのSSO設定を確認します。
+
+タグpush後にタグ名を付け替えて同じバージョンを再公開する運用は避けてください。リリースごとに新しいパッケージバージョンと対応するタグを使います。

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { parseArgs } from "node:util";
 import { access } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { createInterface } from "node:readline/promises";
+import { parseArgs } from "node:util";
 import packageJson from "../package.json" with { type: "json" };
 
 const help = `Usage: create-workspace [options]
@@ -40,7 +40,9 @@ async function selectTemplate(): Promise<void> {
   const lines = readline[Symbol.asyncIterator]();
   try {
     while (true) {
-      stdout.write("テンプレートを選択してください (1: デフォルト, 2: Cloudflare) [1]: ");
+      stdout.write(
+        "テンプレートを選択してください (1: デフォルト, 2: Cloudflare) [1]: ",
+      );
       const { value, done } = await lines.next();
       if (done) throw new Error("入力を受け取れませんでした。");
 

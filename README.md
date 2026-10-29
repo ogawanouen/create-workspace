@@ -82,3 +82,5 @@ git push origin v0.0.2
 ```
 
 タグpushでGitHub Actionsが依存関係を導入し、Biomeチェック、型チェック、ビルドを実行します。すべて成功し、タグのバージョンが`package.json`と一致した場合に、`GITHUB_TOKEN`でGitHub Packagesへ公開します。
+
+初回公開の準備からPC上でのCLI実行までの詳しい手順は[リリース手順](docs/release.md)を参照してください。
