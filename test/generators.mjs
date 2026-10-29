@@ -22,7 +22,7 @@ async function pnpm(cwd, args) {
   });
 }
 
-test("real generators install and build all four projects in one workspace", {
+test("real generators install and build all five projects in one workspace", {
   timeout: 600_000,
 }, async (t) => {
   const root = await fixture(t);
@@ -39,6 +39,7 @@ test("real generators install and build all four projects in one workspace", {
     ["apps", "2", "worker"],
     ["apps", "3", "api"],
     ["apps", "1", "web"],
+    ["apps", "4", "void-app"],
   ]) {
     await t.test(name, { timeout: 180_000 }, async () => {
       const result = await interact(
@@ -60,7 +61,10 @@ test("real generators install and build all four projects in one workspace", {
           (lockfile) => lockfile.importers?.[`${destination}/${name}`],
         ),
       );
-      if (destination === "packages" || name === "web") {
+      if (name === "void-app") {
+        await pnpm(root, ["--filter", "@smoke/void-app", "run", "dev:setup"]);
+        await pnpm(root, ["--filter", "@smoke/void-app", "run", "build"]);
+      } else if (destination === "packages" || name === "web") {
         await pnpm(root, ["--filter", `@smoke/${name}`, "run", "build"]);
         if (destination === "packages") {
           assert.ok(
