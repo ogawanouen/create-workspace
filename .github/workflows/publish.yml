@@ -42,6 +42,18 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Install template dependencies
+        run: pnpm --dir template install --frozen-lockfile
+
+      - name: Check template formatting and lint
+        run: pnpm --dir template check
+
+      - name: Typecheck template
+        run: pnpm --dir template typecheck
+
+      - name: Build template
+        run: pnpm --dir template build
+
       - name: Verify tag version
         env:
           TAG_NAME: ${{ github.ref_name }}
