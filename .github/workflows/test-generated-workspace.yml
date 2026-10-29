@@ -55,24 +55,48 @@ jobs:
         env:
           PROJECT_NAME: ${{ inputs.project_name }}
           GITHUB_TOKEN: ${{ github.token }}
+          LC_ALL: C.UTF-8
           CREATE_WORKSPACE_TEMPLATE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}/template
         run: |
           git config --global http.https://github.com/.extraheader \
             "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
           cd "$RUNNER_TEMP/generated-workspace"
           expect <<'EOF'
-          set timeout -1
+          set stty_init "rows 24 columns 120"
+          set timeout 30
+          proc wait_for_prompt {prompt} {
+            global spawn_id timeout
+            expect {
+              -exact $prompt { return }
+              timeout { puts stderr "Timed out waiting for prompt: $prompt"; exit 1 }
+              eof { puts stderr "Unexpected EOF waiting for prompt: $prompt"; exit 1 }
+            }
+          }
           spawn node $env(GITHUB_WORKSPACE)/dist/cli.mjs
-          expect "テンプレートを選択してください"
+          wait_for_prompt "テンプレートを選択してください"
           send "\033\133B\r"
-          expect "プロジェクト名を入力してください"
+          wait_for_prompt "プロジェクト名を入力してください"
           send "$env(PROJECT_NAME)\r"
-          expect "このコマンドを実行してよろしいですか？"
+          wait_for_prompt "このコマンドを実行してよろしいですか？"
           send "\033\133D\r"
-          expect eof
+          set timeout 1200
+          expect {
+            eof {}
+            timeout { puts stderr "Timed out waiting for workspace generation to finish"; exit 1 }
+          }
           set result [wait]
+          if {[lindex $result 2] != 0 || [llength $result] > 4} {
+            puts stderr "CLI did not exit normally: $result"
+            exit 1
+          }
           exit [lindex $result 3]
           EOF
+          for file in package.json pnpm-workspace.yaml pnpm-lock.yaml biome.json; do
+            if [[ ! -f "$GENERATED_DIR/$file" ]]; then
+              echo "Generated workspace is missing $file: $GENERATED_DIR" >&2
+              exit 1
+            fi
+          done
 
       - name: Install generated workspace dependencies
         run: pnpm --dir "$GENERATED_DIR" install --frozen-lockfile
