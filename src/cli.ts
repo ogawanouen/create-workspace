@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
-import { access } from "node:fs/promises";
+import { access, rename } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { stdin, stdout } from "node:process";
 import { createInterface } from "node:readline/promises";
@@ -66,7 +66,7 @@ async function selectTemplate(): Promise<void> {
         const templateUrl =
           process.env.CREATE_WORKSPACE_TEMPLATE_URL ??
           "https://github.com/ogawanouen/create-workspace/tree/main/template";
-        await confirmAndRun(
+        const created = await confirmAndRun(
           [
             "dlx",
             "create-turbo@latest",
@@ -78,6 +78,12 @@ async function selectTemplate(): Promise<void> {
           ],
           readline,
         );
+        if (created) {
+          await rename(
+            resolve(process.cwd(), name, "biome.json.template"),
+            resolve(process.cwd(), name, "biome.json"),
+          );
+        }
         return;
       }
       console.log("1 または 2 を入力してください。");
@@ -97,7 +103,7 @@ function shellQuote(argument: string): string {
 async function confirmAndRun(
   arguments_: string[],
   readline: ReturnType<typeof createInterface>,
-): Promise<void> {
+): Promise<boolean> {
   const command = `pnpm ${arguments_.map(shellQuote).join(" ")}`;
   console.log(`実行するコマンド: ${command}`);
   const answer = await readline.question(
@@ -106,7 +112,7 @@ async function confirmAndRun(
 
   if (!/^(y|yes)$/i.test(answer.trim())) {
     console.log("実行をキャンセルしました。");
-    return;
+    return false;
   }
 
   await new Promise<void>((resolvePromise, rejectPromise) => {
@@ -126,6 +132,7 @@ async function confirmAndRun(
       }
     });
   });
+  return true;
 }
 
 try {
