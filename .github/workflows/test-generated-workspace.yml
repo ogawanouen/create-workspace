@@ -54,7 +54,7 @@ jobs:
       - name: Generate workspace through the CLI
         env:
           PROJECT_NAME: ${{ inputs.project_name }}
-          CREATE_WORKSPACE_TEMPLATE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}
+          CREATE_WORKSPACE_TEMPLATE_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }}/template
         run: |
           cd "$RUNNER_TEMP/generated-workspace"
           expect <<'EOF'
