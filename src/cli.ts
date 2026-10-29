@@ -65,7 +65,7 @@ async function selectTemplate(): Promise<void> {
         }
         const templateUrl =
           process.env.CREATE_WORKSPACE_TEMPLATE_URL ??
-          "https://github.com/ogawanouen/create-workspace/tree/main";
+          "https://github.com/ogawanouen/create-workspace/tree/main/template";
         await confirmAndRun(
           [
             "dlx",
@@ -73,8 +73,6 @@ async function selectTemplate(): Promise<void> {
             name,
             "--example",
             templateUrl,
-            "--example-path",
-            "template",
             "--package-manager",
             "pnpm",
           ],

@@ -86,4 +86,4 @@ git push origin v0.0.2
 
 GitHub Actionsの「Test generated Cloudflare workspace」は手動実行できます。CLIからCloudflareテンプレートを生成し、生成物の依存関係、Biomeチェック、型チェック、ビルドを確認します。
 
-初回公開の準備からPC上でのCLI実行までの詳しい手順は[リリース手順](docs/release.md)を参照してください。
+初回公開の準備からPC上でのCLI実行までの詳しい手順は[リリース手順](docs/src/content/docs/release.mdx)を参照してください。

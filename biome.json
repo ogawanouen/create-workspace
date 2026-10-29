@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!template/pnpm-lock.yaml"]
+    "includes": ["**", "!template/pnpm-lock.yaml", "!docs/**"]
   },
   "formatter": {
     "enabled": true,
@@ -26,6 +26,11 @@
       "semicolons": "always"
     }
   },
+  "css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
   "assist": {
     "enabled": true,
     "actions": {
