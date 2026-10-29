@@ -64,11 +64,11 @@ jobs:
           set timeout -1
           spawn node $env(GITHUB_WORKSPACE)/dist/cli.mjs
           expect "テンプレートを選択してください"
-          send "2\r"
+          send "\033\133B\r"
           expect "プロジェクト名を入力してください"
           send "$env(PROJECT_NAME)\r"
           expect "このコマンドを実行してよろしいですか？"
-          send "y\r"
+          send "\033\133D\r"
           expect eof
           set result [wait]
           exit [lindex $result 3]

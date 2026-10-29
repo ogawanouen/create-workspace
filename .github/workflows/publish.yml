@@ -42,6 +42,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Test CLI
+        run: pnpm test
+
       - name: Install template dependencies
         run: pnpm --dir template install --frozen-lockfile
 
