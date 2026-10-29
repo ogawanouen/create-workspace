@@ -56,4 +56,29 @@ pnpm --dir "$package_dir/consumer" exec create-workspace --help
 pnpm --dir "$package_dir/consumer" exec create-workspace --version
 ```
 
-tarballのファイル名は現在の`package.json`のバージョンに合わせて変更してください。この段階ではローカル開発と配布形式の確認までを扱い、生成機能・CI・npm公開は含みません。
+tarballのファイル名は現在の`package.json`のバージョンに合わせて変更してください。この段階ではローカル開発と配布形式の確認までを扱います。
+
+## GitHub Packagesからの利用
+
+このパッケージはGitHub Packagesのnpmレジストリに非公開パッケージとして公開します。利用には、パッケージへの読み取り権限と`read:packages`権限を持つPersonal Access Token (classic)が必要です。トークンは利用者の端末でのみ設定し、リポジトリへコミットしないでください。
+
+```sh
+pnpm login --registry=https://npm.pkg.github.com --scope=@ogawanouen
+```
+
+ユーザー名とトークンを求められたら、GitHubユーザー名とPersonal Access Token (classic)を入力します。認証後、CLIを実行できます。
+
+```sh
+pnpm dlx @ogawanouen/create-workspace --help
+```
+
+## リリース
+
+`package.json`の`version`を更新し、変更をmainブランチへマージします。次に、バージョンと同じ`v`タグを作成してpushします。たとえばバージョンが`0.0.2`なら:
+
+```sh
+git tag v0.0.2
+git push origin v0.0.2
+```
+
+タグpushでGitHub Actionsが依存関係を導入し、Biomeチェック、型チェック、ビルドを実行します。すべて成功し、タグのバージョンが`package.json`と一致した場合に、`GITHUB_TOKEN`でGitHub Packagesへ公開します。

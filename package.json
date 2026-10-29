@@ -2,6 +2,13 @@
   "name": "@ogawanouen/create-workspace",
   "version": "0.0.1",
   "description": "monorepoとworkspaceを作成するCLI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ogawanouen/create-workspace.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "bin": {
     "create-workspace": "./dist/cli.mjs"
   },
