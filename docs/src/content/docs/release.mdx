@@ -21,10 +21,10 @@ node --version
 pnpm --version
 ```
 
-`.node-version`はNode.js 24系を指定しています。`package.json`はNode.js `^24.11.0`とpnpm `12.15.0`を指定しているため、Node.jsは24.11.0以上、pnpmは12.15.0を使ってください。
+`.node-version`はNode.js 24.22.1を指定しています。`package.json`はNode.js `^24.22.1`とpnpm `12.16.1`を指定しているため、Node.jsは24.22.1以上の24系、pnpmは12.16.1を使ってください。
 
 ```sh
-fnm install 24
+fnm install 24.22.1
 fnm use
 ```
 
@@ -75,7 +75,7 @@ git push origin "$TAG"
 
 GitHubの`ogawanouen/create-workspace`リポジトリで**Actions**を開き、`Publish to GitHub Packages`の実行を確認します。workflowは次の順に処理します。
 
-1. Node.js 24系とpnpm 12.15.0を設定する
+1. Node.js 24.22.1とpnpm 12.16.1を設定する
 2. lockfileに従って依存関係をインストールする
 3. Biomeチェック、型チェック、ビルドを行う
 4. タグから`v`を除いた値と`package.json`のバージョンを照合する

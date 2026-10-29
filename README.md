@@ -4,10 +4,10 @@ monorepoとworkspaceを作成するCLIです。Turborepoの標準テンプレー
 
 ## 開発環境
 
-- Node.js 24系（24.11.0以上）。`.node-version`に開発用のメジャーバージョンを指定しています。
-- pnpm 12.15.0（`package.json`で固定）。
+- Node.js 24.22.1。`.node-version`に開発用バージョンを指定しています。
+- pnpm 12.16.1（`package.json`で固定）。
 
-Node.jsの対応範囲は`^24.11.0`（24.11.0以上、25.0.0未満）です。開発環境はtsdownの[要件](https://tsdown.dev/guide/getting-started)を満たすNode.js 24系です。
+Node.jsの対応範囲は`^24.22.1`（24.22.1以上、25.0.0未満）です。開発環境はtsdownの[要件](https://tsdown.dev/guide/getting-started)を満たすNode.js 24.22.1です。
 
 ```sh
 pnpm install --frozen-lockfile
